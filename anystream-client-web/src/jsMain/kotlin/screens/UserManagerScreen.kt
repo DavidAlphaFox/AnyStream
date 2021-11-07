@@ -113,7 +113,7 @@ private fun InviteCodeDialog(
         }
     }
     val deleteInviteCode = { inviteCode: InviteCode ->
-        scope.launch { client.deleteInvite(inviteCode.value) }
+        scope.launch { client.deleteInvite(inviteCode.secret) }
         inviteCodesState = inviteCodesState - inviteCode
     }
     val inviteCodeMap by derivedStateOf {
@@ -262,7 +262,7 @@ private fun InviteCodeRow(
         }
         Td {
             val base = "${window.location.protocol}//${window.location.host}"
-            val url = "$base/signup?inviteCode=${inviteCode.value}"
+            val url = "$base/signup?inviteCode=${inviteCode.secret}"
             Input(InputType.Text) {
                 value(url)
                 classes("visually-hidden")

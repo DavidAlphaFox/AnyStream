@@ -17,7 +17,6 @@
  */
 package anystream.models
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 const val USERNAME_LENGTH_MIN = 4
@@ -27,18 +26,9 @@ const val PASSWORD_LENGTH_MAX = 64
 
 @Serializable
 data class User(
-    @SerialName("_id")
-    val id: String,
+    val id: Int,
     val username: String,
     val displayName: String,
-)
-
-@Serializable
-data class UserCredentials(
-    @SerialName("_id")
-    val id: String,
-    val password: String,
-    val permissions: Set<String>
 )
 
 object Permissions {

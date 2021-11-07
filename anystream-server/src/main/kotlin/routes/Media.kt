@@ -116,7 +116,7 @@ fun Route.addMediaManageRoutes(
                             logger.error("Extended provider data query failed", e)
                             return@get call.respond(InternalServerError)
                         }
-                        val tvShow = tmdbSeries.asTvShow(result.tvShow.seasons, mediaId, "")
+                        val tvShow = tmdbSeries.asTvShow(result.tvShow.seasons, mediaId, -1)
                         queries.updateTvShow(tvShow.copy(added = result.tvShow.added))
                         return@get call.respond(
                             MediaLookupResponse(
@@ -133,7 +133,7 @@ fun Route.addMediaManageRoutes(
                                 result.season.seasonNumber,
                                 null,
                                 TmdbTvSeasons.SeasonMethod.images,
-                            ).asTvSeason(result.season.id, "")
+                            ).asTvSeason(result.season.id)
                         } catch (e: Throwable) {
                             logger.error("Extended provider data query failed", e)
                             return@get call.respond(InternalServerError)
@@ -158,7 +158,7 @@ fun Route.addMediaManageRoutes(
                                 result.episode.seasonNumber,
                                 result.episode.number,
                                 null,
-                            ).asTvEpisode(result.episode.id, show.id, "")
+                            ).asTvEpisode(result.episode.id, show.id)
                         } catch (e: Throwable) {
                             logger.error("Extended provider data query failed", e)
                             return@get call.respond(InternalServerError)

@@ -17,15 +17,14 @@
  */
 package anystream.models
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class InviteCode(
-    @SerialName("_id")
-    val value: String,
+    val id: Long,
+    val secret: String,
     val permissions: Set<String>,
-    val createdByUserId: String,
+    val createdByUserId: Int,
 ) {
     companion object {
         const val SIZE = 32

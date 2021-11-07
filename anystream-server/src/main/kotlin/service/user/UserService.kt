@@ -18,12 +18,12 @@
 package anystream.service.user
 
 import anystream.data.UserSession
+import anystream.db.model.PermissionDb
+import anystream.db.model.UserDb
 import anystream.models.*
 import anystream.models.api.*
-import com.mongodb.MongoQueryException
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt
 import org.bouncycastle.util.encoders.Hex
-import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
@@ -37,33 +37,31 @@ class UserService(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val pairingCodes = ConcurrentHashMap<String, PairingMessage>()
 
-    suspend fun getUser(userId: String): User? {
-        return queries.fetchUser(userId)
+    suspend fun getUser(userId: Int): User? {
+        return queries.fetchUser(userId)?.toUserModel()
     }
 
     suspend fun getUsers(): List<User> {
-        return queries.fetchUsers()
+        return queries.fetchUsers().map(UserDb::toUserModel)
     }
 
-    suspend fun deleteUser(userId: String): Boolean {
+    suspend fun deleteUser(userId: Int): Boolean {
         return queries.deleteUser(userId)
     }
 
-    suspend fun createInviteCode(userId: String, permissions: Set<String>): InviteCode? {
-        val inviteCode = InviteCode(
-            value = Hex.toHexString(Random.nextBytes(InviteCode.SIZE)),
+    suspend fun createInviteCode(userId: Int, permissions: Set<String>): InviteCode? {
+        return queries.createInviteCode(
+            secret = Hex.toHexString(Random.nextBytes(InviteCode.SIZE)),
             permissions = permissions,
-            createdByUserId = userId
+            userId = userId,
         )
-
-        return if (queries.insertInviteCode(inviteCode)) inviteCode else null
     }
 
-    suspend fun getInvites(byUserId: String?): List<InviteCode> {
+    suspend fun getInvites(byUserId: Int?): List<InviteCode> {
         return queries.fetchInviteCodes(byUserId)
     }
 
-    suspend fun deleteInvite(inviteCode: String, byUserId: String?): Boolean {
+    suspend fun deleteInvite(inviteCode: String, byUserId: Int?): Boolean {
         return queries.deleteInviteCode(inviteCode, byUserId)
     }
 
@@ -91,66 +89,53 @@ class UserService(
         }
 
         val inviteCodeString = body.inviteCode
-        val inviteCode = if (inviteCodeString.isNullOrBlank()) {
-            null
-        } else {
+        val inviteCode = if (inviteCodeString.isNullOrBlank()) null else {
             queries.fetchInviteCode(inviteCodeString, null)
         }
 
-        if (inviteCode == null && queries.countUsers() > 0L) {
-            return null
-        }
+        // Use permissions from provided invite code if it exists
+        val permissions = inviteCode?.permissions
+        // If no users exist, create user 1 with GLOBAL permission
+            ?: setOf(Permissions.GLOBAL).takeIf { queries.countUsers() == 0L }
+            // otherwise ignore creation request
+            ?: return null
 
-        val permissions = inviteCode?.permissions ?: setOf(Permissions.GLOBAL)
-
-        val user = User(
-            id = ObjectId.get().toString(),
-            username = username,
-            displayName = body.username
-        )
-
-        val hashString = hashPassword(body.password)
-        val credentials = UserCredentials(
-            id = user.id,
-            password = hashString,
+        val newUser = queries.createUser(
+            User(
+                id = -1,
+                username = username,
+                displayName = body.username
+            ),
+            passwordHash = hashPassword(body.password),
             permissions = permissions
-        )
-        return try {
-            // TODO: Ensure all or clear completed
-            queries.insertUser(user)
-            queries.insertCredentials(credentials)
-            if (inviteCode != null) {
-                queries.deleteInviteCode(inviteCode.value, null)
-            }
-
-            CreateUserResponse.success(user, credentials.permissions)
-        } catch (e: MongoQueryException) {
-            logger.error("Failed to insert new user", e)
-            CreateUserResponse.error(null, null)
+        ) ?: return CreateUserResponse.error(null, null)
+        if (inviteCode != null) {
+            queries.deleteInviteCode(inviteCode.secret, null)
         }
+
+        return CreateUserResponse.success(newUser.toUserModel(), permissions)
     }
 
-    suspend fun updateUser(userId: String, body: UpdateUserBody): Boolean {
+    suspend fun updateUser(userId: Int, body: UpdateUserBody): Boolean {
         val user = queries.fetchUser(userId) ?: return false
-        val credentials = queries.fetchCredentials(userId) ?: return false
 
         // Attempt password verification and update first, if this fails
         // any other updates will be ignored.
         val newPassword = body.password
         val currentPassword = body.currentPassword
-        if (!newPassword.isNullOrBlank() && !currentPassword.isNullOrBlank()) {
-            if (verifyPassword(currentPassword, credentials.password)) {
-                val newCredentials = credentials.copy(password = hashPassword(newPassword))
-                if (!queries.updateCredentials(newCredentials)) return false
-            } else {
-                return false
-            }
-        }
+        val newPasswordHash =
+            if (!newPassword.isNullOrBlank() && !currentPassword.isNullOrBlank()) {
+                if (verifyPassword(currentPassword, user.passwordHash)) {
+                    hashPassword(newPassword)
+                } else {
+                    return false
+                }
+            } else null
 
-        val updatedUser = user.copy(
+        val updatedUser = user.toUserModel().copy(
             displayName = body.displayName
         )
-        return queries.updateUser(updatedUser)
+        return queries.updateUser(user.id, updatedUser, newPasswordHash)
     }
 
     fun getPairingMessage(pairingCode: String, registerCode: Boolean): PairingMessage? {
@@ -169,8 +154,8 @@ class UserService(
         val pairingSecret = (pairingMessage as? PairingMessage.Authorized)?.secret
         return if (pairingSecret == secret) {
             val user = queries.fetchUser(pairingMessage.userId) ?: return null
-            val userCredentials = queries.fetchCredentials(pairingMessage.userId) ?: return null
-            CreateSessionResponse.success(user, userCredentials.permissions)
+            val permissions = queries.fetchPermissions(user.id).map(PermissionDb::name).toSet()
+            CreateSessionResponse.success(user.toUserModel(), permissions)
         } else null
     }
 
@@ -193,7 +178,7 @@ class UserService(
                     secret = Hex.toHexString(Random.nextBytes(28)),
                     userId = session.userId
                 )
-                CreateSessionResponse.success(user, session.permissions)
+                CreateSessionResponse.success(user.toUserModel(), session.permissions)
             } else {
                 pairingCodes[body.password] = PairingMessage.Failed
                 CreateSessionResponse.error(CreateSessionError.PASSWORD_INCORRECT)
@@ -206,10 +191,10 @@ class UserService(
 
         val user = queries.fetchUserByUsername(username)
             ?: return CreateSessionResponse.error(CreateSessionError.USERNAME_NOT_FOUND)
-        val auth = queries.fetchCredentials(user.id) ?: return null
+        val permissions = queries.fetchPermissions(user.id).map(PermissionDb::name).toSet()
 
-        return if (verifyPassword(body.password, auth.password)) {
-            CreateSessionResponse.success(user, auth.permissions)
+        return if (verifyPassword(body.password, user.passwordHash)) {
+            CreateSessionResponse.success(user.toUserModel(), permissions)
         } else {
             CreateSessionResponse.error(CreateSessionError.PASSWORD_INCORRECT)
         }

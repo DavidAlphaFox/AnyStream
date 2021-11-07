@@ -62,7 +62,13 @@ kotlin {
 
                 implementation(libs.logback)
 
-                implementation(libs.kmongo.coroutine.serialization)
+                implementation(libs.jdbc.sqlite)
+                implementation(libs.jdbi.core)
+                implementation(libs.jdbi.sqlite)
+                implementation(libs.jdbi.sqlobject)
+                implementation(libs.jdbi.kotlin)
+                implementation(libs.jdbi.kotlin.sqlobject)
+                //implementation("mysql:mysql-connector-java:8.0.27")
 
                 implementation(libs.jaffree)
 

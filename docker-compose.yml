@@ -10,7 +10,7 @@ services:
       ./install/server-shadow/bin/server
       -P:app.ffmpegPath=/usr/bin
       -P:app.webClientPath=/app/client-web
-      -P:app.mongoUrl=mongodb://root:password@mongo
+      -P:app.databaseUrl=sqlite:/app/config/anystream.db
       -P:app.qbittorrentUrl=http://qbittorrent:9090
       -port=8888
     ports:
@@ -18,22 +18,12 @@ services:
     volumes:
       - ./qbittorrent/content:/content
       - ./qbittorrent/downloads:/downloads
+      - ./anystream-client-web/build/distributions:/app/client-web
+      - ./anystream-server/build/install:/app/install
     links:
-      - mongo
       - qbittorrent
     depends_on:
-      - mongo
       - qbittorrent
-
-  mongo:
-    container_name: mongo
-    image: mongo
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
-    ports:
-      - 27017:27017
 
   qbittorrent:
     image: drewcarlson/docker-qbittorrentvpn
@@ -60,12 +50,3 @@ services:
       - ./qbittorrent/config:/config
       - ./qbittorrent/downloads:/downloads
       - ./qbittorrent/content:/content
-
-  mongo-express:
-    container_name: mongo-express
-    image: mongo-express
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: password
-    ports:
-      - 8081:8081

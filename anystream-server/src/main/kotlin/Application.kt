@@ -18,10 +18,9 @@
 package anystream
 
 import anystream.data.UserSession
-import anystream.models.Permissions
+import anystream.db.SessionsDao
 import anystream.routes.installRouting
 import anystream.util.*
-import com.mongodb.ConnectionString
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.features.*
@@ -29,24 +28,25 @@ import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.Unauthorized
 import io.ktor.http.cio.websocket.*
 import io.ktor.http.content.CachingOptions
-import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.serialization.*
 import io.ktor.sessions.*
-import io.ktor.util.*
 import io.ktor.util.date.GMTDate
-import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.bouncycastle.util.encoders.Hex
-import org.litote.kmongo.coroutine.coroutine
-import org.litote.kmongo.eq
-import org.litote.kmongo.reactivestreams.KMongo
+import org.jdbi.v3.core.Jdbi
+import org.jdbi.v3.core.JdbiException
+import org.jdbi.v3.core.kotlin.KotlinPlugin
+import org.jdbi.v3.core.statement.Slf4JSqlLogger
+import org.jdbi.v3.sqlite3.SQLitePlugin
+import org.jdbi.v3.sqlobject.SqlObjectPlugin
+import org.jdbi.v3.sqlobject.kotlin.KotlinSqlObjectPlugin
+import org.jdbi.v3.sqlobject.kotlin.attach
 import org.slf4j.event.Level
 import java.time.Duration
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -54,7 +54,6 @@ val json = Json {
     isLenient = true
     ignoreUnknownKeys = true
     encodeDefaults = true
-    classDiscriminator = "__type"
     allowStructuredMapKeys = true
 }
 
@@ -62,13 +61,24 @@ val json = Json {
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
 
-    val mongoUrl = environment.config.property("app.mongoUrl").getString()
-    val databaseName = environment.config.propertyOrNull("app.databaseName")
-        ?.getString() ?: "anystream"
+    val databaseUrl = environment.config.property("app.databaseUrl").getString()
 
-    val kmongo = KMongo.createClient(ConnectionString(mongoUrl))
-    val mongodb = kmongo.getDatabase(databaseName).coroutine
-    val sessionStorage = MongoSessionStorage(mongodb, log)
+    val jdbi = Jdbi.create("jdbc:$databaseUrl").apply {
+        setSqlLogger(Slf4JSqlLogger())
+        installPlugin(SQLitePlugin())
+        installPlugin(SqlObjectPlugin())
+        installPlugin(KotlinSqlObjectPlugin())
+        installPlugin(KotlinPlugin())
+    }
+    val dbHandle = try {
+        jdbi.open()
+    } catch (e: JdbiException) {
+        log.error("failed to create database connection", e)
+        exitProcess(-1)
+    }
+
+    val sessionsDao = dbHandle.attach<SessionsDao>().apply { createTable() }
+    val sessionStorage = MongoSessionStorage(sessionsDao)
 
     install(DefaultHeaders) {}
     install(ContentNegotiation) { json(json) }
@@ -83,7 +93,7 @@ fun Application.module(testing: Boolean = false) {
         }
         deflate {
             priority = 10.0
-            minimumSize(1024) // condition
+            minimumSize(1024)
         }
         excludeContentType(ContentType.Video.Any)
     }
@@ -136,5 +146,5 @@ fun Application.module(testing: Boolean = false) {
     install(PermissionAuthorization) {
         extract { (it as UserSession).permissions }
     }
-    installRouting(mongodb)
+    installRouting(dbHandle)
 }

@@ -11,8 +11,9 @@ torrent_search = "0.0.3"
 mobiuskt = "0.1.9"
 ktor_perm = "0.1.0"
 
+jdbi = "3.23.0"
+jdbc_sqlite = "3.36.0.3"
 korlibs_korio = "2.2.1"
-kmongo = "4.3.0"
 bouncy_castle = "1.67"
 tmdb = "1.10"
 jaffree = "2021.10.19"
@@ -40,6 +41,13 @@ serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-cor
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 
 kotlinjs-extensions = { module = "org.jetbrains.kotlin-wrappers:kotlin-extensions", version.ref = "kotlinjs_ext" }
+
+jdbi-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+jdbi-sqlite = { module = "org.jdbi:jdbi3-sqlite", version.ref = "jdbi" }
+jdbi-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
+jdbi-kotlin = { module = "org.jdbi:jdbi3-kotlin", version.ref = "jdbi" }
+jdbi-kotlin-sqlobject = { module = "org.jdbi:jdbi3-kotlin-sqlobject", version.ref = "jdbi" }
+jdbc-sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "jdbc_sqlite" }
 
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorio" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktorio" }
@@ -86,8 +94,6 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 tmdbapi = { module = "info.movito:themoviedbapi", version.ref = "tmdb" }
 
-kmongo-coroutine-serialization = { module = "org.litote.kmongo:kmongo-coroutine-serialization", version.ref = "kmongo" }
-
 androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.6.0" }
 androidx-appcompat-core = { module = "androidx.appcompat:appcompat", version = "1.3.1" }
 androidx-leanback-core = { module = "androidx.leanback:leanback", version = "1.1.0-rc02" }
@@ -101,6 +107,7 @@ quickie-bundled = { module = "io.github.g00fy2.quickie:quickie-bundled", version
 mobiuskt-core = { module = "org.drewcarlson:mobiuskt-core", version.ref = "mobiuskt" }
 mobiuskt-extras = { module = "org.drewcarlson:mobiuskt-extras", version.ref = "mobiuskt" }
 mobiuskt-android = { module = "org.drewcarlson:mobiuskt-android", version.ref = "mobiuskt" }
+
 
 [bundles]
 exoplayer = [ "exoplayer-core", "exoplayer-ui", "exoplayer-hls" ]

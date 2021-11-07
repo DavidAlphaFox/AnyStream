@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS sessions (
+  id VARCHAR(96) NOT NULL,
+  data BLOB,
+  PRIMARY KEY (id)
+)

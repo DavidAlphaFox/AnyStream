@@ -24,7 +24,7 @@ import java.time.Instant
 
 @Serializable
 data class UserSession(
-    val userId: String,
+    val userId: Int,
     val permissions: Set<Permission>,
     val sessionStarted: Long = Instant.now().toEpochMilli()
 ) : Principal {

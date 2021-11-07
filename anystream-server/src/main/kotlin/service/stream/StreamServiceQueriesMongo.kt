@@ -17,29 +17,32 @@
  */
 package anystream.service.stream
 
+import anystream.db.UsersDao
+import anystream.db.model.UserDb
 import anystream.models.*
 import com.mongodb.MongoException
+import org.jdbi.v3.core.JdbiException
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.slf4j.LoggerFactory
 import java.time.Instant
 
 class StreamServiceQueriesMongo(
-    mongodb: CoroutineDatabase
+    mongodb: CoroutineDatabase,
+    private val usersDao: UsersDao,
 ) : StreamServiceQueries {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val usersDb = mongodb.getCollection<User>()
     private val playbackStateDb = mongodb.getCollection<PlaybackState>()
     private val moviesDb = mongodb.getCollection<Movie>()
     private val episodeDb = mongodb.getCollection<Episode>()
     private val tvShowDb = mongodb.getCollection<TvShow>()
     private val mediaRefs = mongodb.getCollection<MediaReference>()
 
-    override suspend fun fetchUsersByIds(ids: List<String>): List<User> {
+    override suspend fun fetchUsersByIds(ids: List<Int>): List<User> {
         return try {
-            usersDb.find(User::id `in` ids).toList()
-        } catch (e: MongoException) {
+            usersDao.findByIds(ids).map(UserDb::toUserModel)
+        } catch (e: JdbiException) {
             logger.error("Failed to load Users ids=$ids", e)
             emptyList()
         }
@@ -83,7 +86,7 @@ class StreamServiceQueriesMongo(
         }
     }
 
-    override suspend fun fetchPlaybackState(mediaRefId: String, userId: String): PlaybackState? {
+    override suspend fun fetchPlaybackState(mediaRefId: String, userId: Int): PlaybackState? {
         return try {
             playbackStateDb.findOne(
                 PlaybackState::userId eq userId,
@@ -107,7 +110,7 @@ class StreamServiceQueriesMongo(
 
     override suspend fun updatePlaybackState(
         mediaRefId: String,
-        userId: String,
+        userId: Int,
         position: Double
     ): Boolean {
         return try {

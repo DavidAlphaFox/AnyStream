@@ -176,14 +176,14 @@ fun Route.addUserRoutes(userService: UserService) {
             route("/{user_id}") {
                 withAnyPermission(Permissions.GLOBAL) {
                     get {
-                        val userId = call.parameters["user_id"]!!
+                        val userId = call.parameters["user_id"]?.toIntOrNull()!!
                         call.respond(userService.getUser(userId) ?: NotFound)
                     }
                 }
 
                 put {
                     val session = call.sessions.get<UserSession>()!!
-                    val userId = call.parameters["user_id"]!!
+                    val userId = call.parameters["user_id"]?.toIntOrNull()!!
                     val body = call.receiveOrNull<UpdateUserBody>()
                         ?: return@put call.respond(UnprocessableEntity)
 
@@ -197,14 +197,9 @@ fun Route.addUserRoutes(userService: UserService) {
 
                 withAnyPermission(Permissions.GLOBAL) {
                     delete {
-                        val userId = call.parameters["user_id"]!!
-
-                        if (ObjectId.isValid(userId)) {
-                            val result = userService.deleteUser(userId)
-                            call.respond(if (result) OK else NotFound)
-                        } else {
-                            call.respond(BadRequest)
-                        }
+                        val userId = call.parameters["user_id"]?.toIntOrNull()!!
+                        val result = userService.deleteUser(userId)
+                        call.respond(if (result) OK else NotFound)
                     }
                 }
             }

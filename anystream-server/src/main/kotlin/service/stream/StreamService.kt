@@ -82,7 +82,7 @@ class StreamService(
 
     suspend fun getPlaybackState(
         mediaRefId: String,
-        userId: String,
+        userId: Int,
         create: Boolean
     ): PlaybackState? {
         val state = queries.fetchPlaybackState(mediaRefId, userId)
@@ -125,7 +125,7 @@ class StreamService(
         return queries.deletePlaybackState(playbackStateId)
     }
 
-    suspend fun updateStatePosition(mediaRefId: String, userId: String, position: Double): Boolean {
+    suspend fun updateStatePosition(mediaRefId: String, userId: Int, position: Double): Boolean {
         return queries.updatePlaybackState(mediaRefId, userId, position)
     }
 

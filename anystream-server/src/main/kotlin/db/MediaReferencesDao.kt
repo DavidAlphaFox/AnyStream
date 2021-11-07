@@ -15,25 +15,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package anystream.models.api
+package anystream.db
 
-import kotlinx.serialization.Serializable
+import org.jdbi.v3.sqlobject.locator.UseClasspathSqlLocator
+import org.jdbi.v3.sqlobject.statement.SqlUpdate
 
-@Serializable
-sealed class PairingMessage {
+@UseClasspathSqlLocator
+interface MediaReferencesDao {
 
-    @Serializable
-    object Idle : PairingMessage()
+    @SqlUpdate
+    fun createTable()
 
-    @Serializable
-    data class Started(val pairingCode: String) : PairingMessage()
 
-    @Serializable
-    data class Authorized(
-        val secret: String,
-        val userId: Int,
-    ) : PairingMessage()
-
-    @Serializable
-    object Failed : PairingMessage()
 }

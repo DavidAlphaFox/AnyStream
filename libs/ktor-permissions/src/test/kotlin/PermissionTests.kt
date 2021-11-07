@@ -34,7 +34,7 @@ enum class Permission {
 
 @Serializable
 data class UserSession(
-    val userId: String,
+    val userId: Int,
     val permissions: Set<Permission>,
 ) : Principal
 

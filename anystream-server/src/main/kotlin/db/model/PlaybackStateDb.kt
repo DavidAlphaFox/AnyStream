@@ -15,24 +15,42 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package anystream.models
+package anystream.db.model
 
-import kotlinx.serialization.Serializable
+import anystream.models.PlaybackState
 
-@Serializable
-data class PlaybackState(
+data class PlaybackStateDb(
     val id: Int,
     val mediaReferenceId: Int,
     val mediaId: Int,
     val userId: Int,
     val position: Double,
     val runtime: Double,
-    val updatedAt: Long = 0L,
+    val updatedAt: Long,
 ) {
-    val completedPercent: Float
-        get() {
-            return (position / runtime)
-                .coerceIn(0.0, 1.0)
-                .toFloat()
+    companion object {
+        fun from(state: PlaybackState): PlaybackStateDb {
+            return PlaybackStateDb(
+                id = state.id,
+                mediaReferenceId = state.mediaReferenceId,
+                mediaId = state.mediaId,
+                userId = state.userId,
+                position = state.position,
+                runtime = state.runtime,
+                updatedAt = state.updatedAt,
+            )
         }
+    }
+
+    fun toStateModel(): PlaybackState {
+        return PlaybackState(
+            id = id,
+            mediaReferenceId = mediaReferenceId,
+            mediaId = mediaId,
+            userId = userId,
+            position = position,
+            runtime = runtime,
+            updatedAt = updatedAt,
+        )
+    }
 }

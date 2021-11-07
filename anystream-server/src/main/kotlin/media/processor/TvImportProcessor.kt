@@ -48,7 +48,7 @@ class TvImportProcessor(
 
     override suspend fun process(
         contentFile: File,
-        userId: String,
+        userId: Int,
         marker: Marker,
     ): ImportMediaResult {
         if (contentFile.isFile) {
@@ -182,7 +182,7 @@ class TvImportProcessor(
     }
 
     private suspend fun File.importSeason(
-        userId: String,
+        userId: Int,
         season: TvSeason,
         episodes: List<Episode>,
         marker: Marker,

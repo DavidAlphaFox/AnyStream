@@ -86,7 +86,7 @@ class TmdbMetadataProvider(
                         exists = existingMovie != null,
                         movie = movieDb.asMovie(
                             id = existingMovie?.id ?: remoteId,
-                            userId = "",
+                            userId = -1,
                         )
                     )
                 }
@@ -142,7 +142,7 @@ class TmdbMetadataProvider(
 
         val result = if (existingMovie == null || request.refresh) {
             val movieId = existingMovie?.id ?: ObjectId.get().toString()
-            val userId = existingMovie?.addedByUserId ?: ""
+            val userId = existingMovie?.addedByUserId ?: -1
             val movieDb = try {
                 checkNotNull(fetchMovie(contentId))
             } catch (e: Throwable) {
@@ -185,7 +185,7 @@ class TmdbMetadataProvider(
 
         return if (existingTvShow == null || request.refresh) {
             val tvShowId = existingTvShow?.id ?: ObjectId.get().toString()
-            val userId = ""
+            val userId = -1
             val tmdbSeries = try {
                 checkNotNull(fetchTvSeries(contentId))
             } catch (e: Throwable) {

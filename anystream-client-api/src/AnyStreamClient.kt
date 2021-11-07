@@ -322,7 +322,7 @@ class AnyStreamClient(
         http.get("/api/users")
 
     suspend fun updateUser(
-        userId: String,
+        userId: Int,
         displayName: String,
         password: String?,
         currentPassword: String?

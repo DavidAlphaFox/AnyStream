@@ -42,7 +42,7 @@ class MovieImportProcessor(
 
     override suspend fun process(
         contentFile: File,
-        userId: String,
+        userId: Int,
         marker: Marker
     ): ImportMediaResult {
         val movieFile = if (contentFile.isFile) {

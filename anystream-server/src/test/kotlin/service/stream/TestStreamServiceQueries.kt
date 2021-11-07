@@ -40,7 +40,7 @@ class TestStreamServiceQueries : StreamServiceQueries {
         return null
     }
 
-    override suspend fun fetchPlaybackState(mediaRefId: String, userId: String): PlaybackState? {
+    override suspend fun fetchPlaybackState(mediaRefId: String, userId: Int): PlaybackState? {
         return null
     }
 
@@ -50,7 +50,7 @@ class TestStreamServiceQueries : StreamServiceQueries {
 
     override suspend fun updatePlaybackState(
         mediaRefId: String,
-        userId: String,
+        userId: Int,
         position: Double
     ): Boolean {
         return false

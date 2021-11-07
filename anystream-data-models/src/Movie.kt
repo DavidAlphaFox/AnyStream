@@ -34,7 +34,7 @@ data class Movie(
     val backdropPath: String?,
     val releaseDate: String?,
     val added: Long,
-    val addedByUserId: String,
+    val addedByUserId: Int,
 ) {
     val isAdded: Boolean
         get() = !id.contains(':')

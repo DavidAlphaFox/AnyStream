@@ -15,25 +15,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package anystream.models.api
+package anystream.db
 
-import kotlinx.serialization.Serializable
+import anystream.util.SessionData
+import org.jdbi.v3.sqlobject.locator.UseClasspathSqlLocator
+import org.jdbi.v3.sqlobject.statement.SqlQuery
+import org.jdbi.v3.sqlobject.statement.SqlUpdate
 
-@Serializable
-sealed class PairingMessage {
+@UseClasspathSqlLocator
+interface SessionsDao {
 
-    @Serializable
-    object Idle : PairingMessage()
+    @SqlUpdate
+    fun createTable()
 
-    @Serializable
-    data class Started(val pairingCode: String) : PairingMessage()
+    @SqlQuery("SELECT * FROM sessions")
+    fun all(): List<SessionData>
 
-    @Serializable
-    data class Authorized(
-        val secret: String,
-        val userId: Int,
-    ) : PairingMessage()
+    @SqlUpdate("SELECT * FROM sessions WHERE id = ?")
+    fun find(id: String): ByteArray?
 
-    @Serializable
-    object Failed : PairingMessage()
+    @SqlUpdate("INSERT INTO sessions (id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = :data")
+    fun insertOrUpdate(id: String, data: ByteArray)
+
+    @SqlUpdate("DELETE FROM sessions WHERE id = ?")
+    fun delete(id: String)
 }

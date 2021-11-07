@@ -15,25 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package anystream.models.api
+package anystream.db.model
 
-import kotlinx.serialization.Serializable
-
-@Serializable
-sealed class PairingMessage {
-
-    @Serializable
-    object Idle : PairingMessage()
-
-    @Serializable
-    data class Started(val pairingCode: String) : PairingMessage()
-
-    @Serializable
-    data class Authorized(
-        val secret: String,
-        val userId: Int,
-    ) : PairingMessage()
-
-    @Serializable
-    object Failed : PairingMessage()
-}
+data class PermissionDb(
+    val userId: Int,
+    val name: String,
+)

@@ -69,7 +69,7 @@ class MediaDbQueries(
     suspend fun findMovieById(
         movieId: String,
         includeRefs: Boolean = false,
-        includePlaybackStateForUser: String? = null,
+        includePlaybackStateForUser: Int? = null,
     ): MovieResponse? {
         val movie = moviesDb.findOneById(movieId) ?: return null
         val mediaRefs = if (includeRefs) {
@@ -104,7 +104,7 @@ class MediaDbQueries(
     suspend fun findShowById(
         showId: String,
         includeRefs: Boolean = false,
-        includePlaybackStateForUser: String? = null,
+        includePlaybackStateForUser: Int? = null,
     ): TvShowResponse? {
         val show = tvShowDb.findOneById(showId) ?: return null
         val mediaRefs = if (includeRefs) {
@@ -132,7 +132,7 @@ class MediaDbQueries(
     suspend fun findSeasonById(
         seasonId: String,
         includeRefs: Boolean = false,
-        includePlaybackStateForUser: String? = null,
+        includePlaybackStateForUser: Int? = null,
     ): SeasonResponse? {
         val tvShow = tvShowDb.findOne(TvShow::seasons elemMatch (TvSeason::id eq seasonId))
             ?: return null
@@ -171,7 +171,7 @@ class MediaDbQueries(
     suspend fun findEpisodeById(
         episodeId: String,
         includeRefs: Boolean = false,
-        includePlaybackStateForUser: String? = null,
+        includePlaybackStateForUser: Int? = null,
     ): EpisodeResponse? {
         val episode = episodeDb.findOneById(episodeId) ?: return null
         val show = tvShowDb.findOneById(episode.showId) ?: return null
@@ -194,7 +194,7 @@ class MediaDbQueries(
         )
     }
 
-    suspend fun findPlaybackStateByUserId(userId: String, mediaId: String?): PlaybackState? {
+    suspend fun findPlaybackStateByUserId(userId: Int, mediaId: String?): PlaybackState? {
         return if (mediaId == null) {
             playbackStatesDb.findOne(PlaybackState::userId eq userId)
         } else {
@@ -205,7 +205,7 @@ class MediaDbQueries(
         }
     }
 
-    suspend fun findCurrentlyWatching(userId: String, limit: Int): CurrentlyWatchingQueryResults {
+    suspend fun findCurrentlyWatching(userId: Int, limit: Int): CurrentlyWatchingQueryResults {
         val allPlaybackStates = playbackStatesDb
             .find(PlaybackState::userId eq userId)
             .sort(descending(PlaybackState::updatedAt))

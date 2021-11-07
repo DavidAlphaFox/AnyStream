@@ -17,6 +17,7 @@
  */
 package anystream.media
 
+import anystream.db.MediaReferencesDao
 import anystream.models.LocalMediaReference
 import anystream.models.MediaReference
 import anystream.models.StreamEncodingDetails
@@ -56,14 +57,14 @@ private val FFMPEG_EXTENSIONS = listOf(
 class MediaImporter(
     private val ffprobe: () -> FFprobe,
     private val processors: List<MediaImportProcessor>,
-    private val mediaRefs: CoroutineCollection<MediaReference>,
+    private val mediaRefsDao: MediaReferencesDao,
     private val scope: CoroutineScope,
     private val logger: Logger,
 ) {
     private val classMarker = MarkerFactory.getMarker(this::class.simpleName)
 
     // Within a specified content directory, find all content unknown to anystream
-    suspend fun findUnmappedFiles(userId: String, request: ImportMedia): List<String> {
+    suspend fun findUnmappedFiles(userId: Int, request: ImportMedia): List<String> {
         val contentFile = File(request.contentPath)
         if (!contentFile.exists()) {
             return emptyList()
@@ -88,7 +89,7 @@ class MediaImporter(
             .map(File::getAbsolutePath)
     }
 
-    suspend fun importAll(userId: String, request: ImportMedia): Flow<ImportMediaResult> {
+    suspend fun importAll(userId: Int, request: ImportMedia): Flow<ImportMediaResult> {
         val marker = marker()
         logger.debug(marker, "Recursive import requested by '$userId': $request")
         val contentFile = File(request.contentPath)
@@ -115,7 +116,7 @@ class MediaImporter(
             } ?: emptyFlow()
     }
 
-    suspend fun import(userId: String, request: ImportMedia): ImportMediaResult {
+    suspend fun import(userId: Int, request: ImportMedia): ImportMediaResult {
         val marker = marker()
         logger.debug(marker, "Import requested by '$userId': $request")
 
@@ -199,7 +200,7 @@ class MediaImporter(
 
     // Process a single media file and attempt to import missing data and references
     private suspend fun internalImport(
-        userId: String,
+        userId: Int,
         request: ImportMedia,
         marker: Marker,
     ): ImportMediaResult {

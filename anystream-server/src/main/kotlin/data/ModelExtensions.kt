@@ -30,7 +30,7 @@ private const val MAX_CACHED_POSTERS = 5
 
 fun MovieDb.asMovie(
     id: String,
-    userId: String = "",
+    userId: Int = -1,
 ) = Movie(
     id = id,
     tmdbId = this.id,
@@ -59,21 +59,21 @@ fun MovieDb.asMovie(
 fun TvSeries.asTvShow(
     tmdbSeasons: List<TvSeasonDb>,
     id: String,
-    userId: String,
+    userId: Int,
     createId: (id: Int) -> String = { ObjectId.get().toString() },
 ): Pair<TvShow, List<Episode>> {
     val episodes = tmdbSeasons.flatMap { season ->
         season.episodes.map { episode ->
-            episode.asTvEpisode(createId(episode.id), id, userId)
+            episode.asTvEpisode(createId(episode.id), id)
         }
     }
     val seasons = tmdbSeasons.map { season ->
-        season.asTvSeason(createId(season.id), userId)
+        season.asTvSeason(createId(season.id))
     }
     return asTvShow(seasons, id, userId) to episodes
 }
 
-fun TvEpisode.asTvEpisode(id: String, showId: String, userId: String): Episode {
+fun TvEpisode.asTvEpisode(id: String, showId: String): Episode {
     return Episode(
         id = id,
         tmdbId = this.id,
@@ -87,7 +87,7 @@ fun TvEpisode.asTvEpisode(id: String, showId: String, userId: String): Episode {
     )
 }
 
-fun TvSeasonDb.asTvSeason(id: String, userId: String): TvSeason {
+fun TvSeasonDb.asTvSeason(id: String): TvSeason {
     return TvSeason(
         id = id,
         tmdbId = this.id,
@@ -99,7 +99,7 @@ fun TvSeasonDb.asTvSeason(id: String, userId: String): TvSeason {
     )
 }
 
-fun TvSeries.asTvShow(seasons: List<TvSeason>, id: String, userId: String = ""): TvShow {
+fun TvSeries.asTvShow(seasons: List<TvSeason>, id: String, userId: Int = -1): TvShow {
     return TvShow(
         id = id,
         name = name,

@@ -18,6 +18,7 @@
 package anystream.routes
 
 import anystream.data.MediaDbQueries
+import anystream.db.*
 import anystream.media.MediaImporter
 import anystream.media.processor.MovieImportProcessor
 import anystream.media.processor.TvImportProcessor
@@ -28,8 +29,7 @@ import anystream.models.*
 import anystream.service.stream.StreamService
 import anystream.service.stream.StreamServiceQueriesMongo
 import anystream.service.user.UserService
-import anystream.service.user.UserServiceQueriesMongo
-import anystream.torrent.search.KMongoTorrentProviderCache
+import anystream.service.user.UserServiceQueriesJdbi
 import anystream.util.SinglePageApp
 import anystream.util.withAnyPermission
 import anystream.util.withPermission
@@ -42,11 +42,13 @@ import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.routing.*
 import kotlinx.coroutines.*
-import org.litote.kmongo.coroutine.CoroutineDatabase
+import org.jdbi.v3.core.Handle
+import org.jdbi.v3.sqlobject.kotlin.attach
 import java.io.File
 import java.nio.file.Path
+import java.util.*
 
-fun Application.installRouting(mongodb: CoroutineDatabase) {
+fun Application.installRouting(dbHandle: Handle) {
     val webClientPath = environment.config.propertyOrNull("app.webClientPath")?.getString()
     val ffmpegPath = environment.config.property("app.ffmpegPath").getString()
     val tmdbApiKey = environment.config.property("app.tmdbApiKey").getString()
@@ -56,7 +58,7 @@ fun Application.installRouting(mongodb: CoroutineDatabase) {
 
     val tmdb by lazy { TmdbApi(tmdbApiKey) }
 
-    val torrentSearch = TorrentSearch(KMongoTorrentProviderCache(mongodb))
+    val torrentSearch = TorrentSearch(/*KMongoTorrentProviderCache(mongodb)*/)
 
     val qbClient = QBittorrentClient(
         baseUrl = qbittorrentUrl,
@@ -68,8 +70,6 @@ fun Application.installRouting(mongodb: CoroutineDatabase) {
 
     val queries = MediaDbQueries(mongodb)
     launch { queries.createIndexes() }
-
-    val mediaRefs = mongodb.getCollection<MediaReference>()
 
     val providers = listOf<MetadataProvider>(
         TmdbMetadataProvider(tmdb, queries)
@@ -83,11 +83,17 @@ fun Application.installRouting(mongodb: CoroutineDatabase) {
     )
     val importer = MediaImporter(ffprobe, processors, mediaRefs, importScope, log)
 
-    val userService = UserService(UserServiceQueriesMongo(mongodb))
+    val playbackStatesDao = dbHandle.attach<PlaybackStatesDao>().apply { createTable() }
+    val mediaReferencesDao = dbHandle.attach<MediaReferencesDao>().apply { createTable() }
+    val usersDao = dbHandle.attach<UsersDao>().apply { createTable() }
+    val invitesDao = dbHandle.attach<InvitesDao>().apply { createTable() }
+    val permissionsDao = dbHandle.attach<PermissionsDao>().apply { createTable() }
+
+    val userService = UserService(UserServiceQueriesJdbi(usersDao, permissionsDao, invitesDao))
 
     val transcodePath = environment.config.property("app.transcodePath").getString()
     val streamService =
-        StreamService(StreamServiceQueriesMongo(mongodb), ffmpeg, ffprobe, transcodePath)
+        StreamService(StreamServiceQueriesMongo(mongodb, usersDao), ffmpeg, ffprobe, transcodePath)
 
     routing {
         route("/api") {

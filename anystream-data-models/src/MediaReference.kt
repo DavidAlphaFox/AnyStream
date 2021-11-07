@@ -28,7 +28,7 @@ sealed class MediaReference {
     abstract val contentId: String
     abstract val rootContentId: String?
     abstract val added: Long
-    abstract val addedByUserId: String
+    abstract val addedByUserId: Int
     abstract val mediaKind: MediaKind
     abstract val streams: List<StreamEncodingDetails>
 }
@@ -40,7 +40,7 @@ data class LocalMediaReference(
     override val contentId: String,
     override val rootContentId: String? = null,
     override val added: Long,
-    override val addedByUserId: String,
+    override val addedByUserId: Int,
     override val mediaKind: MediaKind,
     override val streams: List<StreamEncodingDetails> = emptyList(),
     val filePath: String,
@@ -54,7 +54,7 @@ data class DownloadMediaReference(
     override val contentId: String,
     override val rootContentId: String? = null,
     override val added: Long,
-    override val addedByUserId: String,
+    override val addedByUserId: Int,
     override val mediaKind: MediaKind,
     override val streams: List<StreamEncodingDetails> = emptyList(),
     val hash: String,
